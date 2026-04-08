@@ -285,4 +285,34 @@ class DashboardController {
         header("Location: /dashboard");
         exit;
     }
+    public function deleteAccount() {
+        $this->requireLogin();
+        $this->verifyCsrf(); // Protecție CSRF
+        
+        $db = Database::getInstance();
+        $userId = $_SESSION['user_id'];
+
+        try {
+            // Ștergerea din tabela `users` va declanșa `ON DELETE CASCADE` la nivelul bazei de date.
+            // Acest lucru va șterge automat, sigur și eficient toate alertele, amprentele dosarelor (istoricul) și linkurile magice.
+            $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+
+            // Distrugem sesiunea pentru a deconecta utilizatorul, dar îi păstrăm preferința de limbă
+            $savedLang = $_SESSION['lang'] ?? 'ro';
+            session_destroy();
+            session_start();
+            $_SESSION['lang'] = $savedLang;
+
+            $_SESSION['success'] = translate('success.account_deleted', 'Contul tău și toate datele asociate au fost șterse definitiv.');
+            
+        } catch (Exception $e) {
+            error_log("Eroare la ștergerea contului pentru user_id {$userId}: " . $e->getMessage());
+            $_SESSION['error'] = translate('error.system');
+        }
+
+        // După ștergere, îl trimitem pe prima pagină
+        header("Location: /");
+        exit;
+    }
 }
