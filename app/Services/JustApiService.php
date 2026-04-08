@@ -20,9 +20,11 @@ class JustApiService {
 
     /**
      * Caută dosare după nume, și opțional după instituție și obiect.
+     * Returnează un array de dosare sau NULL dacă API-ul MJ este picat.
      */
-    public function searchCases(string $numeParte, ?string $institutie = null, ?string $obiect = null): array {
-        if (!$this->client) return [];
+    public function searchCases(string $numeParte, ?string $institutie = null, ?string $obiect = null): ?array {
+        // Dacă nu s-a putut inițializa clientul SOAP (ex: site căzut), returnăm null pentru a semnala eroarea
+        if (!$this->client) return null; 
 
         // Construim parametrii exacți ceruți de metoda 'CautareDosare' a MJ
         $params = [
@@ -43,7 +45,7 @@ class JustApiService {
             // API-ul MJ poate returna un singur obiect (dacă e un dosar) sau un array de obiecte.
             // Noi le normalizăm mereu într-un array pentru a le putea procesa uniform.
             if (!isset($response->CautareDosareResult->Dosar)) {
-                return []; // Nu a găsit nimic
+                return []; // Nu a găsit nimic (comportament normal valid)
             }
 
             $dosare = $response->CautareDosareResult->Dosar;
@@ -56,7 +58,8 @@ class JustApiService {
 
         } catch (SoapFault $e) {
             error_log("Eroare apel API MJ pentru {$numeParte}: " . $e->getMessage());
-            return [];
+            // Returnăm NULL (și nu array gol) pentru ca sistemul să știe că verificarea a fost invalidată de server
+            return null; 
         }
     }
 }
