@@ -27,8 +27,20 @@ class LanguageController {
         }
 
         // Căutăm pagina de unde a venit utilizatorul (Referer)
-        // Dacă nu o găsim (ex: a accesat link-ul direct), îl trimitem pe home '/'
+        // Dacă nu o găsim (ex: a accesat link-ul direct), default este home '/'
         $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+        
+        // --- PROTECȚIE SECURITATE: Open Redirect ---
+        // Ne asigurăm că redirect-ul se face exclusiv către pagini de pe domeniul nostru.
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $refererHost = parse_url($referer, PHP_URL_HOST);
+
+        // Dacă hostul de referință există (nu este null) dar este diferit de domeniul platformei,
+        // îl trimitem în siguranță pe pagina principală (Acasă).
+        if ($refererHost !== null && $refererHost !== $host) {
+            $referer = '/';
+        }
+        // -------------------------------------------
         
         header("Location: " . $referer);
         exit(); // Oprim execuția scriptului după redirect
