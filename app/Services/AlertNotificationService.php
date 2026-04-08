@@ -203,7 +203,7 @@ class AlertNotificationService
             ];
         } catch (Throwable $e) {
             $this->db->rollBack();
-            $this->touchAlertCheckDate($alertId, $now);
+            // NU setăm touchAlertCheckDate aici, pentru ca sistemul să reîncerce la următoarea rulare
             throw $e;
         }
     }
@@ -233,6 +233,11 @@ class AlertNotificationService
                     $objectCode ?: null
                 );
 
+                // Dacă primim null, înseamnă că a picat API-ul Ministerului (SOAP Fault)
+                if ($dosare === null) {
+                    throw new RuntimeException("Eroare de comunicare cu API-ul MJ pentru {$fullName}.");
+                }
+
                 foreach ($dosare as $dosar) {
                     $numarDosar = $this->normalizeString((string)$this->getCaseField($dosar, 'numar'));
                     if ($numarDosar === '') {
@@ -246,6 +251,9 @@ class AlertNotificationService
                     $seenNumbers[$numarDosar] = true;
                     $results[] = $dosar;
                 }
+                
+                // Pauză de 0.5 secunde între request-uri pentru a nu fi blocați de just.ro
+                usleep(500000); 
             }
         }
 
