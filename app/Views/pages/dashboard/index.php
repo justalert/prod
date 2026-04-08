@@ -28,12 +28,13 @@
                 </form>
             </div>
         </div>
+        
         <div class="card shadow-sm border-0 mb-4 bg-white border-start border-secondary border-4">
             <div class="card-body">
                 <h5 class="fw-bold text-secondary"><?= translate('dashboard.privacy.title', '🛡️ Date și Confidențialitate') ?></h5>
                 <p class="small text-muted mb-3"><?= translate('dashboard.privacy.desc', 'Descarcă o copie a datelor tale sau șterge log-urile tehnice ale notificărilor primite.') ?></p>
                 
-                <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap align-items-center gap-2">
                     <a href="/dashboard/export-data" class="btn btn-sm btn-outline-secondary fw-bold">
                         <?= translate('dashboard.btn.export', '⬇️ Descarcă Datele (JSON)') ?>
                     </a>
@@ -44,9 +45,17 @@
                             <?= translate('dashboard.btn.clear_history', '🗑️ Șterge Istoric Notificări') ?>
                         </button>
                     </form>
+
+                    <form action="/dashboard/delete-account" method="POST" class="m-0 ms-auto" onsubmit="return confirm('<?= translate('dashboard.confirm.delete_account', '⚠️ ATENȚIE: Această acțiune va șterge definitiv și irevocabil contul tău, toate alertele setate și istoricul notificărilor. Nu vom mai reține nicio dată despre tine. Ești absolut sigur că vrei să continui?') ?>');">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                        <button type="submit" class="btn btn-sm btn-danger fw-bold text-white shadow-sm">
+                            <?= translate('dashboard.btn.delete_account', '🚨 Șterge Contul Complet') ?>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
+        
         <?php if (empty($alerts)): ?>
             <div class="text-center py-5 bg-white shadow-sm rounded">
                 <span class="fs-1 d-block mb-3">📭</span>
