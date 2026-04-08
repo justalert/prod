@@ -57,6 +57,7 @@ $router->post('/dashboard/alert/create', 'DashboardController@createAlert');
 // Funcționalități GDPR
 $router->get('/dashboard/export-data', 'DashboardController@exportData');
 $router->post('/dashboard/clear-history', 'DashboardController@clearHistory');
+$router->post('/dashboard/delete-account', 'DashboardController@deleteAccount');
 
 // ==== PORNIREA APLICAȚIEI ==== //
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
