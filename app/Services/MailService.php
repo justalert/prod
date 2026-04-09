@@ -106,7 +106,7 @@ class MailService {
         }
     }
     
-    // Metoda pentru trimiterea notificării când s-a găsit un dosar
+    // 3. Metoda pentru trimiterea notificării când s-a găsit un dosar NOU sau MODIFICAT
     public static function sendAlertNotification(string $toEmail, string $numeCautat, array $dosareNoi): bool {
         try {
             $mail = self::getMailer();
@@ -159,6 +159,106 @@ class MailService {
             
         } catch (Exception $e) {
             error_log("Eroare trimitere alertă dosar către {$toEmail}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // 4. NOU: Metodă pentru trimiterea raportului inițial de Bun Venit
+    public static function sendWelcomeNotification(string $toEmail, string $numeCautat, array $dosareNoi): bool {
+        try {
+            $mail = self::getMailer();
+            $mail->addAddress($toEmail);
+
+            $mail->Subject = translate('email.welcome.subject', 'JustAlert - Cont activat și primele dosare găsite!');
+            
+            // Construim lista de dosare HTML
+            $listaDosareHtml = "";
+            foreach ($dosareNoi as $dosar) {
+                $numar = htmlspecialchars($dosar->numar ?? 'N/A');
+                $data = isset($dosar->data) ? date('d.m.Y', strtotime($dosar->data)) : 'N/A';
+                $institutie = htmlspecialchars($dosar->institutie ?? 'N/A');
+                $obiect = htmlspecialchars($dosar->obiect ?? 'N/A');
+
+                $listaDosareHtml .= "
+                <div style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #198754; margin-bottom: 10px;'>
+                    <h3 style='margin-top:0; color: #198754;'>Dosar: {$numar}</h3>
+                    <p style='margin: 5px 0;'><strong>Data:</strong> {$data}</p>
+                    <p style='margin: 5px 0;'><strong>Instanța:</strong> {$institutie}</p>
+                    <p style='margin: 5px 0;'><strong>Obiect:</strong> {$obiect}</p>
+                </div>";
+            }
+
+            $dashboardLink = "https://justalert.eu/dashboard";
+
+            $bodyHTML = "
+                <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto;'>
+                    <h2 style='color: #198754;'>" . translate('email.welcome.title', 'Bun venit pe JustAlert!') . "</h2>
+                    <p>" . translate('email.welcome.body1', 'Contul tău a fost validat. Am analizat portalul instanțelor pentru numele') . " <strong>{$numeCautat}</strong>.</p>
+                    <p>" . translate('email.welcome.body2', 'Acestea sunt dosarele pe care le-am găsit în acest moment (aceasta este lista de bază). De acum înainte, te vom notifica <strong>doar când apar dosare noi sau termene noi</strong> la dosarele existente:') . "</p>
+                    
+                    {$listaDosareHtml}
+
+                    <p style='text-align: center; margin: 30px 0;'>
+                        <a href='{$dashboardLink}' style='display: inline-block; padding: 12px 24px; background-color: #0d6efd; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;'>" . translate('email.alert.btn_dashboard', 'Vezi Panoul Meu') . "</a>
+                    </p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <p style='font-size: 12px; color: #777;'>" . translate('email.alert.footer', 'Poți dezactiva aceste alerte oricând din contul tău.') . "</p>
+                </div>
+            ";
+
+            $mail->isHTML(true);
+            $mail->Body = $bodyHTML;
+            $mail->send();
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Eroare trimitere email welcome către {$toEmail}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    // 5. Metodă pentru trimiterea formularului de contact către Admin
+    public static function sendContactMessage(string $fromEmail, string $name, string $message): bool {
+        try {
+            $mail = self::getMailer();
+            
+            // Citim adresa de destinație pentru contact din .env
+            $envPath = dirname(BASE_PATH) . '/.env';
+            $env = file_exists($envPath) ? parse_ini_file($envPath) : [];
+            
+            // Căutăm CONTACT_EMAIL. Dacă nu e definită, lăsăm un fallback clar (ex: contact@justalert.eu)
+            $adminEmail = $env['CONTACT_EMAIL'] ?? 'contact@justalert.eu';
+
+            $mail->addAddress($adminEmail); // Trimitem mesajul CĂTRE adresa de suport/admin
+            $mail->addReplyTo($fromEmail, $name); // Setăm Reply-To către utilizatorul care a completat formularul
+
+            $mail->Subject = "Formular Contact JustAlert - " . $name;
+            
+            // Protejăm conținutul împotriva injecțiilor XSS în clientul de mail
+            $safeMessage = nl2br(htmlspecialchars($message));
+            $safeName = htmlspecialchars($name);
+            $safeEmail = htmlspecialchars($fromEmail);
+
+            $bodyHTML = "
+                <div style='font-family: Arial, sans-serif; color: #333; max-width: 600px;'>
+                    <h2 style='color: #0d6efd;'>Mesaj nou de pe site (Contact)</h2>
+                    <p><strong>De la:</strong> {$safeName} ({$safeEmail})</p>
+                    <p><strong>Data:</strong> " . date('d.m.Y H:i:s') . "</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <p><strong>Mesaj:</strong></p>
+                    <div style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #0d6efd;'>
+                        {$safeMessage}
+                    </div>
+                </div>
+            ";
+
+            $mail->isHTML(true);
+            $mail->Body = $bodyHTML;
+            $mail->send();
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Eroare trimitere mesaj contact de la {$fromEmail}: " . $e->getMessage());
             return false;
         }
     }
