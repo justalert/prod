@@ -45,6 +45,10 @@ $router->get('/transparenta', function() {
     View::render('pages/about/transparenta', ['pageTitle' => translate('nav.transparency', 'Transparență & Arhitectură Tehnică')]);
 });
 
+// Pagina de Contact
+$router->get('/contact', 'ContactController@index');
+$router->post('/contact/send', 'ContactController@send');
+
 // Rute pentru Dashboard
 $router->get('/dashboard', 'DashboardController@index');
 $router->post('/dashboard/toggle-ai', 'DashboardController@toggleAi');
