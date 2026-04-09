@@ -46,7 +46,7 @@
                         </button>
                     </form>
 
-                    <form action="/dashboard/delete-account" method="POST" class="m-0 ms-auto" onsubmit="return confirm('<?= translate('dashboard.confirm.delete_account', '⚠️ ATENȚIE: Această acțiune va șterge definitiv și irevocabil contul tău, toate alertele setate și istoricul notificărilor. Nu vom mai reține nicio dată despre tine. Ești absolut sigur că vrei să continui?') ?>');">
+                    <form action="/dashboard/delete-account" method="POST" class="m-0 ms-md-auto" onsubmit="return confirm('<?= translate('dashboard.confirm.delete_account', '⚠️ ATENȚIE: Această acțiune va șterge definitiv și irevocabil contul tău, toate alertele setate și istoricul notificărilor. Nu vom mai reține nicio dată despre tine. Ești absolut sigur că vrei să continui?') ?>');">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                         <button type="submit" class="btn btn-sm btn-danger fw-bold text-white shadow-sm">
                             <?= translate('dashboard.btn.delete_account', '🚨 Șterge Contul Complet') ?>
