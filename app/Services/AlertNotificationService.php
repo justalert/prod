@@ -51,8 +51,10 @@ class AlertNotificationService
 
     /**
      * Rulează pentru o singură alertă.
+     * @param int $alertId ID-ul alertei
+     * @param bool $isInitial Flag pentru a trimite emailul de bun venit (scanarea de bază)
      */
-    public function runForAlertId(int $alertId): array
+    public function runForAlertId(int $alertId, bool $isInitial = false): array
     {
         $alert = $this->getAlertById($alertId);
 
@@ -65,7 +67,7 @@ class AlertNotificationService
             ];
         }
 
-        return $this->processAlert($alert);
+        return $this->processAlert($alert, $isInitial);
     }
 
     private function getActiveAlerts(): array
@@ -117,7 +119,7 @@ class AlertNotificationService
         return $row ?: null;
     }
 
-    private function processAlert(array $alert): array
+    private function processAlert(array $alert, bool $isInitial = false): array
     {
         $alertId = (int)$alert['id'];
         $email = (string)$alert['email'];
@@ -180,7 +182,12 @@ class AlertNotificationService
             }
 
             if (!empty($dosareDeNotificat)) {
-                $sent = MailService::sendAlertNotification($email, $fullName, $dosareDeNotificat);
+                // Aici se face diferența între Mailul de Bun Venit și Alerta Zilnică
+                if ($isInitial) {
+                    $sent = MailService::sendWelcomeNotification($email, $fullName, $dosareDeNotificat);
+                } else {
+                    $sent = MailService::sendAlertNotification($email, $fullName, $dosareDeNotificat);
+                }
 
                 if ($sent) {
                     foreach ($dosareDeNotificat as $dosarNotificat) {
@@ -188,7 +195,7 @@ class AlertNotificationService
                         $this->markFingerprintNotified($alertId, $caseKey, $now);
                     }
                 } else {
-                    throw new RuntimeException('Trimiterea emailului de alertă a eșuat.');
+                    throw new RuntimeException('Trimiterea emailului a eșuat.');
                 }
             }
 
@@ -203,7 +210,7 @@ class AlertNotificationService
             ];
         } catch (Throwable $e) {
             $this->db->rollBack();
-            // NU setăm touchAlertCheckDate aici, pentru ca sistemul să reîncerce la următoarea rulare
+            // NU setăm touchAlertCheckDate aici, pentru ca sistemul să reîncerce la următoarea rulare în caz de eroare de API
             throw $e;
         }
     }
